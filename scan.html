@@ -427,11 +427,30 @@ async function main() {
   const itemId = getParam("id");
   if (!itemId) { showError("No item ID in this QR code. Please re-generate the QR code."); return; }
 
-  // Fetch item data + location in parallel
+  // Fetch item data via JSONP to avoid CORS issues, location in parallel
+  function fetchItem(id) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Date.now();
+      const script = document.createElement("script");
+      const timeout = setTimeout(() => {
+        delete window[cb];
+        script.remove();
+        reject(new Error("timeout"));
+      }, 10000);
+      window[cb] = (data) => {
+        clearTimeout(timeout);
+        delete window[cb];
+        script.remove();
+        resolve(data);
+      };
+      script.src = `${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(id)}&callback=${cb}`;
+      document.head.appendChild(script);
+    });
+  }
+
   const [locationResult, fetchResult] = await Promise.allSettled([
     getLocation(),
-    fetch(`${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(itemId)}`)
-      .then(r => r.json())
+    fetchItem(itemId)
   ]);
 
   const location = locationResult.status === "fulfilled" ? locationResult.value : "Unknown location";
@@ -449,18 +468,11 @@ async function main() {
   // Log the scan silently
   if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
     try {
-      const logRes = await fetch(`${APPS_SCRIPT_URL}?action=logScan`, {
-        method: "POST",
-        body: JSON.stringify({
-          itemId,
-          itemName: data.name,
-          location,
-          timestamp: new Date().toISOString()
-        })
+      const logRes = await fetch(`${APPS_SCRIPT_URL}?action=logScan&itemId=${encodeURIComponent(itemId)}&itemName=${encodeURIComponent(data.name)}&location=${encodeURIComponent(location)}&timestamp=${encodeURIComponent(new Date().toISOString())}`, {
+        method: "GET",
+        mode: "no-cors"
       });
-      if ((await logRes.json()).success) {
-        document.getElementById("log-badge").style.display = "flex";
-      }
+      document.getElementById("log-badge").style.display = "flex";
     } catch { /* silent fail */ }
   }
 }
