@@ -212,11 +212,6 @@ function generateQRs() {
 
     card.appendChild(wrap);
 
-    const label = document.createElement("div");
-    label.className = "qr-label";
-    label.textContent = item.id;
-    card.appendChild(label);
-
     if (item.name) {
       const name = document.createElement("div");
       name.className = "qr-name";
