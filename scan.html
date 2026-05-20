@@ -333,7 +333,7 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec";
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // replace after deploying Apps Script
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function getParam(key) {
@@ -387,13 +387,7 @@ function showItem(data, location, itemId) {
   }
   if (data.photoUrl) {
     const img = document.getElementById("item-photo");
-    // Auto-convert Google Drive share links to embeddable format
-    let photoUrl = data.photoUrl;
-    const driveMatch = photoUrl.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-    if (driveMatch) {
-      photoUrl = `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
-    }
-    img.src = photoUrl;
+    img.src = data.photoUrl;
     img.style.display = "block";
     document.getElementById("photo-placeholder").style.display = "none";
   }
