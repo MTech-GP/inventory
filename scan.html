@@ -427,54 +427,40 @@ async function main() {
   const itemId = getParam("id");
   if (!itemId) { showError("No item ID in this QR code. Please re-generate the QR code."); return; }
 
-  // Fetch item data via JSONP to avoid CORS issues, location in parallel
-  function fetchItem(id) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Date.now();
-      const script = document.createElement("script");
-      const timeout = setTimeout(() => {
-        delete window[cb];
-        script.remove();
-        reject(new Error("timeout"));
-      }, 10000);
-      window[cb] = (data) => {
-        clearTimeout(timeout);
-        delete window[cb];
-        script.remove();
-        resolve(data);
-      };
-      script.src = `${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(id)}&callback=${cb}`;
-      document.head.appendChild(script);
-    });
-  }
-
-  const [locationResult, fetchResult] = await Promise.allSettled([
-    getLocation(),
-    fetchItem(itemId)
-  ]);
-
-  const location = locationResult.status === "fulfilled" ? locationResult.value : "Unknown location";
-
-  if (fetchResult.status === "rejected" || !fetchResult.value || fetchResult.value.error) {
-    showError(fetchResult.value?.error || "Could not reach inventory server. Check your connection.");
+  // Load item first, location separately so it doesn't block
+  let fetchResult;
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(itemId)}`, { redirect: "follow" });
+    fetchResult = await res.json();
+  } catch(err) {
+    showError("Could not reach inventory server. Check your connection.");
     return;
   }
 
-  const data = fetchResult.value;
+  if (!fetchResult || fetchResult.error) {
+    showError(fetchResult?.error || "Item not found.");
+    return;
+  }
+
+  const data = fetchResult;
   if (!data.name) { showError(`Item "${itemId}" was not found in the inventory.`); return; }
 
-  showItem(data, location, itemId);
+  // Show item immediately with placeholder location
+  showItem(data, "Locating…", itemId);
 
-  // Log the scan silently
-  if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
-    try {
-      const logRes = await fetch(`${APPS_SCRIPT_URL}?action=logScan&itemId=${encodeURIComponent(itemId)}&itemName=${encodeURIComponent(data.name)}&location=${encodeURIComponent(location)}&timestamp=${encodeURIComponent(new Date().toISOString())}`, {
-        method: "GET",
-        mode: "no-cors"
-      });
-      document.getElementById("log-badge").style.display = "flex";
-    } catch { /* silent fail */ }
-  }
+  // Get location in background, update when ready
+  getLocation().then(location => {
+    document.getElementById("scan-location").textContent = location;
+
+    // Log silently
+    if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+      fetch(`${APPS_SCRIPT_URL}?action=logScan&itemId=${encodeURIComponent(itemId)}&itemName=${encodeURIComponent(data.name)}&location=${encodeURIComponent(location)}&timestamp=${encodeURIComponent(new Date().toISOString())}`, {
+        method: "GET", mode: "no-cors"
+      }).then(() => {
+        document.getElementById("log-badge").style.display = "flex";
+      }).catch(() => {});
+    }
+  });
 }
 
 main();
