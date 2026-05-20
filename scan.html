@@ -304,10 +304,7 @@
         <div class="label">Stock</div>
         <div class="value" id="item-stock">—</div>
       </div>
-      <div class="info-cell">
-        <div class="label">Unit Cost</div>
-        <div class="value" id="item-cost">—</div>
-      </div>
+
       <div class="info-cell full" id="serial-cell" style="display:none">
         <div class="label">Serial Number</div>
         <div class="value serial-value" id="item-serial">—</div>
@@ -336,7 +333,7 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec"; // replace after deploying Apps Script
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // replace after deploying Apps Script
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function getParam(key) {
@@ -377,7 +374,7 @@ function showItem(data, location, itemId) {
   document.getElementById("item-brand").textContent = data.brand || "";
   document.getElementById("item-category").textContent = data.category || "—";
   document.getElementById("item-specs").textContent = data.specs || "—";
-  document.getElementById("item-cost").textContent = formatCurrency(data.unitCost);
+
   document.getElementById("item-stock").textContent = formatStock(data.stock, data.serialNo);
 
   if (data.serialNo) {
