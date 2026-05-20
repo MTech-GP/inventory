@@ -333,7 +333,7 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────
-const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // replace after deploying Apps Script
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec"; // replace after deploying Apps Script
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function getParam(key) {
@@ -453,7 +453,7 @@ async function main() {
     document.getElementById("scan-location").textContent = location;
 
     // Log silently
-    if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+    if (APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec") {
       fetch(`${APPS_SCRIPT_URL}?action=logScan&itemId=${encodeURIComponent(itemId)}&itemName=${encodeURIComponent(data.name)}&location=${encodeURIComponent(location)}&timestamp=${encodeURIComponent(new Date().toISOString())}`, {
         method: "GET", mode: "no-cors"
       }).then(() => {
