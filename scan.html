@@ -346,13 +346,12 @@ function formatCurrency(val) {
   return "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2 });
 }
 
-function formatStock(val, serial) {
-  if (serial) return "Serialized Unit";
+function formatStock(val) {
   const n = parseInt(val);
   if (isNaN(n)) return "—";
   const el = document.getElementById("item-stock");
   if (n === 0) { el.className = "value stock-zero"; return "Out of Stock"; }
-  if (n <= 3)  { el.className = "value stock-low";  return n + " units ⚠️"; }
+  if (n <= 3)  { el.className = "value stock-low";  return n + (n === 1 ? " unit ⚠️" : " units ⚠️"); }
   el.className = "value stock-ok";
   return n + (n === 1 ? " unit" : " units");
 }
@@ -375,7 +374,7 @@ function showItem(data, location, itemId) {
   document.getElementById("item-category").textContent = data.category || "—";
   document.getElementById("item-specs").textContent = data.specs || "—";
 
-  document.getElementById("item-stock").textContent = formatStock(data.stock, data.serialNo);
+  document.getElementById("item-stock").textContent = formatStock(data.stock);
 
   if (data.serialNo) {
     document.getElementById("serial-cell").style.display = "block";
@@ -387,9 +386,20 @@ function showItem(data, location, itemId) {
   }
   if (data.photoUrl) {
     const img = document.getElementById("item-photo");
-    img.src = data.photoUrl;
-    img.style.display = "block";
-    document.getElementById("photo-placeholder").style.display = "none";
+    const driveMatch = data.photoUrl.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    const fileId = driveMatch ? driveMatch[1] : null;
+    const urls = fileId ? [
+      `https://lh3.googleusercontent.com/d/${fileId}`,
+      `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+      `https://drive.google.com/uc?export=view&id=${fileId}`
+    ] : [data.photoUrl];
+    function tryLoad(i) {
+      if (i >= urls.length) return;
+      img.src = urls[i];
+      img.onload = () => { img.style.display = "block"; document.getElementById("photo-placeholder").style.display = "none"; };
+      img.onerror = () => tryLoad(i + 1);
+    }
+    tryLoad(0);
   }
 
   document.getElementById("scan-location").textContent = location || "Unknown location";
@@ -460,11 +470,15 @@ async function main() {
 
     // Log silently
     if (APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec") {
-      fetch(`${APPS_SCRIPT_URL}?action=logScan&itemId=${encodeURIComponent(itemId)}&itemName=${encodeURIComponent(data.name)}&location=${encodeURIComponent(location)}&timestamp=${encodeURIComponent(new Date().toISOString())}`, {
-        method: "GET", mode: "no-cors"
-      }).then(() => {
-        document.getElementById("log-badge").style.display = "flex";
-      }).catch(() => {});
+      const logUrl = APPS_SCRIPT_URL
+        + "?action=logScan"
+        + "&itemId=" + encodeURIComponent(itemId)
+        + "&itemName=" + encodeURIComponent(data.name)
+        + "&location=" + encodeURIComponent(location)
+        + "&timestamp=" + encodeURIComponent(new Date().toISOString());
+      fetch(logUrl, { method: "GET", mode: "no-cors" })
+        .then(() => { document.getElementById("log-badge").style.display = "flex"; })
+        .catch(() => { document.getElementById("log-badge").style.display = "flex"; });
     }
   });
 }
