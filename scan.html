@@ -470,15 +470,18 @@ async function main() {
 
     // Log silently
     if (APPS_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec") {
+      // Use script tag to bypass CORS for logging
       const logUrl = APPS_SCRIPT_URL
         + "?action=logScan"
+        + "&callback=logDone"
         + "&itemId=" + encodeURIComponent(itemId)
         + "&itemName=" + encodeURIComponent(data.name)
         + "&location=" + encodeURIComponent(location)
         + "&timestamp=" + encodeURIComponent(new Date().toISOString());
-      fetch(logUrl, { method: "GET", mode: "no-cors" })
-        .then(() => { document.getElementById("log-badge").style.display = "flex"; })
-        .catch(() => { document.getElementById("log-badge").style.display = "flex"; });
+      window.logDone = () => { document.getElementById("log-badge").style.display = "flex"; };
+      const logScript = document.createElement("script");
+      logScript.src = logUrl;
+      document.head.appendChild(logScript);
     }
   });
 }
