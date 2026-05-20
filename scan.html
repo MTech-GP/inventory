@@ -354,7 +354,7 @@ function formatStock(val, serial) {
   if (n === 0) { el.className = "value stock-zero"; return "Out of Stock"; }
   if (n <= 3)  { el.className = "value stock-low";  return n + " units ⚠️"; }
   el.className = "value stock-ok";
-  return n + " units";
+  return n + (n === 1 ? " unit" : " units");
 }
 
 function showError(msg) {
@@ -430,7 +430,13 @@ async function main() {
   // Load item first, location separately so it doesn't block
   let fetchResult;
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(itemId)}`, { redirect: "follow" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(itemId)}`, {
+      redirect: "follow",
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
     fetchResult = await res.json();
   } catch(err) {
     showError("Could not reach inventory server. Check your connection.");
