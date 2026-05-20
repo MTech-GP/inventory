@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Scan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #4f8ef7;
+    --accent2: #7c6af7;
+    --green: #3ecf8e;
+    --yellow: #f7c948;
+    --red: #f76f6f;
+    --text: #e8eaf0;
+    --muted: #6b7299;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 48px;
+  }
+
+  /* ── Header ── */
+  .top-bar {
+    width: 100%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .top-bar .logo {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .top-bar .brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .top-bar .brand span { color: var(--text); }
+
+  /* ── Main card ── */
+  .card {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 24px;
+    padding: 0 16px;
+  }
+
+  /* Item ID badge */
+  .item-id-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .item-id-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Photo */
+  .photo-wrap {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .photo-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .photo-placeholder .icon { font-size: 36px; opacity: 0.4; }
+
+  /* Item name */
+  .item-name {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .item-brand {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .info-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .info-cell .label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .info-cell .value {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .info-cell.full { grid-column: 1 / -1; }
+
+  /* Stock pill */
+  .stock-ok   { color: var(--green); }
+  .stock-low  { color: var(--yellow); }
+  .stock-zero { color: var(--red); }
+
+  /* Serial */
+  .serial-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  /* Location strip */
+  .location-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .location-strip .pin { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .location-strip .loc-text { color: var(--muted); }
+  .location-strip .loc-name { color: var(--text); font-weight: 500; font-size: 14px; }
+
+  /* Scan timestamp */
+  .scan-time {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* States */
+  #loading, #error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+    text-align: center;
+    padding: 32px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .error-icon { font-size: 40px; }
+  .error-title { font-size: 18px; font-weight: 600; color: var(--red); }
+  .error-msg { font-size: 13px; color: var(--muted); max-width: 280px; }
+
+  #item-view { display: none; }
+
+  /* Logged badge */
+  .logged-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(62, 207, 142, 0.1);
+    border: 1px solid rgba(62, 207, 142, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 12px;
+    color: var(--green);
+    font-family: var(--mono);
+    margin-top: 16px;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">📦</div>
+  <div class="brand"><span>INVENTORY</span> · SCAN</div>
+</div>
+
+<div class="card">
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-label">fetching item data…</div>
+  </div>
+
+  <!-- Error -->
+  <div id="error-state" style="display:none">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">Item Not Found</div>
+    <div class="error-msg" id="error-msg">This QR code does not match any item in the inventory.</div>
+  </div>
+
+  <!-- Item view -->
+  <div id="item-view">
+    <div class="item-id-badge" id="item-id-label">INV-000</div>
+
+    <div class="photo-wrap" id="photo-wrap">
+      <div class="photo-placeholder" id="photo-placeholder">
+        <div class="icon">🖼️</div>
+        <div>No photo on file</div>
+      </div>
+      <img id="item-photo" style="display:none" alt="Item photo">
+    </div>
+
+    <div class="item-name" id="item-name">—</div>
+    <div class="item-brand" id="item-brand">—</div>
+
+    <div class="info-grid">
+      <div class="info-cell">
+        <div class="label">Category</div>
+        <div class="value" id="item-category">—</div>
+      </div>
+      <div class="info-cell">
+        <div class="label">Specs</div>
+        <div class="value" id="item-specs">—</div>
+      </div>
+      <div class="info-cell">
+        <div class="label">Stock</div>
+        <div class="value" id="item-stock">—</div>
+      </div>
+      <div class="info-cell">
+        <div class="label">Unit Cost</div>
+        <div class="value" id="item-cost">—</div>
+      </div>
+      <div class="info-cell full" id="serial-cell" style="display:none">
+        <div class="label">Serial Number</div>
+        <div class="value serial-value" id="item-serial">—</div>
+      </div>
+      <div class="info-cell full" id="remarks-cell" style="display:none">
+        <div class="label">Remarks</div>
+        <div class="value" id="item-remarks">—</div>
+      </div>
+    </div>
+
+    <div class="location-strip">
+      <div class="pin">📍</div>
+      <div>
+        <div class="loc-text">Scanned from</div>
+        <div class="loc-name" id="scan-location">Locating…</div>
+      </div>
+    </div>
+
+    <div class="logged-badge" id="log-badge" style="display:none">
+      ✓ &nbsp;Scan logged successfully
+    </div>
+
+    <div class="scan-time" id="scan-time"></div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7l_BHDFo4QE1NQKZkKmBIR_2KxWuDZUR9neRuYbZ5xh8_O-uN_gsKrTAJllGJliA_/exec"; // replace after deploying Apps Script
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function getParam(key) {
+  return new URLSearchParams(window.location.search).get(key);
+}
+
+function formatCurrency(val) {
+  const n = parseFloat(val);
+  if (isNaN(n)) return "—";
+  return "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2 });
+}
+
+function formatStock(val, serial) {
+  if (serial) return "Serialized Unit";
+  const n = parseInt(val);
+  if (isNaN(n)) return "—";
+  const el = document.getElementById("item-stock");
+  if (n === 0) { el.className = "value stock-zero"; return "Out of Stock"; }
+  if (n <= 3)  { el.className = "value stock-low";  return n + " units ⚠️"; }
+  el.className = "value stock-ok";
+  return n + " units";
+}
+
+function showError(msg) {
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("error-state").style.display = "flex";
+  document.getElementById("error-msg").textContent = msg;
+}
+
+function showItem(data, location, itemId) {
+  document.getElementById("loading").style.display = "none";
+  const view = document.getElementById("item-view");
+  view.style.display = "block";
+  view.classList.add("fade-in");
+
+  document.getElementById("item-id-label").textContent = itemId;
+  document.getElementById("item-name").textContent = data.name || "—";
+  document.getElementById("item-brand").textContent = data.brand || "";
+  document.getElementById("item-category").textContent = data.category || "—";
+  document.getElementById("item-specs").textContent = data.specs || "—";
+  document.getElementById("item-cost").textContent = formatCurrency(data.unitCost);
+  document.getElementById("item-stock").textContent = formatStock(data.stock, data.serialNo);
+
+  if (data.serialNo) {
+    document.getElementById("serial-cell").style.display = "block";
+    document.getElementById("item-serial").textContent = data.serialNo;
+  }
+  if (data.remarks) {
+    document.getElementById("remarks-cell").style.display = "block";
+    document.getElementById("item-remarks").textContent = data.remarks;
+  }
+  if (data.photoUrl) {
+    const img = document.getElementById("item-photo");
+    img.src = data.photoUrl;
+    img.style.display = "block";
+    document.getElementById("photo-placeholder").style.display = "none";
+  }
+
+  document.getElementById("scan-location").textContent = location || "Unknown location";
+  document.getElementById("scan-time").textContent =
+    "Scanned " + new Date().toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
+}
+
+// ── Get GPS → reverse geocode ─────────────────────────────────────────────
+async function getLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve("Location unavailable"); return; }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const r = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const d = await r.json();
+          const a = d.address;
+          const city = a.city || a.town || a.municipality || a.county || "";
+          const region = a.state || a.region || "";
+          resolve(city && region ? `${city}, ${region}` : d.display_name?.split(",").slice(0,2).join(",") || "Unknown");
+        } catch { resolve("Location lookup failed"); }
+      },
+      () => resolve("Location permission denied"),
+      { timeout: 8000 }
+    );
+  });
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────
+async function main() {
+  const itemId = getParam("id");
+  if (!itemId) { showError("No item ID in this QR code. Please re-generate the QR code."); return; }
+
+  // Fetch item data + location in parallel
+  const [locationResult, fetchResult] = await Promise.allSettled([
+    getLocation(),
+    fetch(`${APPS_SCRIPT_URL}?action=getItem&id=${encodeURIComponent(itemId)}`)
+      .then(r => r.json())
+  ]);
+
+  const location = locationResult.status === "fulfilled" ? locationResult.value : "Unknown location";
+
+  if (fetchResult.status === "rejected" || !fetchResult.value || fetchResult.value.error) {
+    showError(fetchResult.value?.error || "Could not reach inventory server. Check your connection.");
+    return;
+  }
+
+  const data = fetchResult.value;
+  if (!data.name) { showError(`Item "${itemId}" was not found in the inventory.`); return; }
+
+  showItem(data, location, itemId);
+
+  // Log the scan silently
+  if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+    try {
+      const logRes = await fetch(`${APPS_SCRIPT_URL}?action=logScan`, {
+        method: "POST",
+        body: JSON.stringify({
+          itemId,
+          itemName: data.name,
+          location,
+          timestamp: new Date().toISOString()
+        })
+      });
+      if ((await logRes.json()).success) {
+        document.getElementById("log-badge").style.display = "flex";
+      }
+    } catch { /* silent fail */ }
+  }
+}
+
+main();
+</script>
+</body>
+</html>
