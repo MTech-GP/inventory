@@ -387,11 +387,11 @@ function showItem(data, location, itemId) {
   }
   if (data.photoUrl) {
     const img = document.getElementById("item-photo");
-    // Auto-convert Google Drive share links to direct image URLs
+    // Auto-convert Google Drive share links to embeddable format
     let photoUrl = data.photoUrl;
     const driveMatch = photoUrl.match(/drive\.google\.com\/file\/d\/([^/]+)/);
     if (driveMatch) {
-      photoUrl = `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+      photoUrl = `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
     }
     img.src = photoUrl;
     img.style.display = "block";
